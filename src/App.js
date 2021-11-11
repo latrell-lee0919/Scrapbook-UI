@@ -1,6 +1,15 @@
 import React, { useState } from 'react';
 
-// component for button to set filter to ''
+const ShowAll = (props) => {
+  const handleClick = () => {
+    props.setNewFilter('')
+  }
+  return (
+    <div>
+      <button onClick={handleClick}>Show All</button>
+    </div>
+  )
+}
 
 const Filter = (props) => {
   const years = props.pictures.map(p => p.year)
@@ -64,6 +73,7 @@ const App = () => {
   return (
     <div>
       <Filter newFilter={newFilter} handleFilterChange={handleFilterChange} pictures={pictures}/>
+      <ShowAll setNewFilter={setNewFilter}/>
       {filtered.map(picture => 
         <Pictures 
         key={picture.year}
