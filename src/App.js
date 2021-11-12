@@ -1,4 +1,9 @@
-import React, { useState } from 'react';
+/* eslint-disable no-undef */
+import React, { useState, useEffect } from 'react';
+import cardService from './services/cards'
+//import loginService from './services/login';
+import CardForm from './components/CardForm';
+import LoginForm from './components/LoginForm';
 
 const ShowAll = (props) => {
   const handleClick = () => {
@@ -12,7 +17,7 @@ const ShowAll = (props) => {
 }
 
 const Filter = (props) => {
-  const years = props.pictures.map(p => p.year)
+  const years = props.cards.map(c => c.year)
   return (
     <div>
       <label htmlFor="year">Choose a year:</label>
@@ -25,8 +30,7 @@ const Filter = (props) => {
   )
 }
 
-const Pictures = (props) => {
-  console.log(props)
+const Cards = (props) => {
   return (
     <div>
       <div> year {props.year}</div>
@@ -36,53 +40,78 @@ const Pictures = (props) => {
 }
 
 const App = () => {
-  //const [pictures, setPictures] = useState([])
+  const [cards, setCards] = useState([])
   const [newFilter, setNewFilter] = useState('')
+  const [user, setUser] = useState(null)
+
+  useEffect(() => {
+    const loggedUserJSON = window.localStorage.getItem('loggedInUser')
+    if (loggedUserJSON) {
+      const user = JSON.parse(loggedUserJSON)
+      setUser(user)
+      cardService.setToken(user.token)
+      cardService.getAll().then(cards => 
+        setCards(cards)
+      )
+    }
+  }, [])
 
   const handleFilterChange = (event) => {
     setNewFilter(event.target.value);
   }
 
-  const pictures = [
-    {
-      year: "2018",
-      data: "testing 2018"
-    },
-    {
-      year: "2017",
-      data: "testing 2017"
-    },
-    {
-      year: "2016",
-      data: "testing 2016"
-    },
-    {
-      year: "2019",
-      data: "testing 2019"
-    },
-    {
-      year: "2020",
-      data: "testing 2020"
-    },
-  ]
+  const addCard = async (cardObject) => {
+    const newCard = await cardService.create(cardObject)
+    setCards(cards.concat(newCard))
+  }
 
-  var filtered = pictures.filter(picture => picture.year.includes(newFilter))
+  const handleLogout = () => {
+    window.localStorage.clear()
+    setUser(null)
+  }
+
+  const loginForm = () => (
+    <div>
+      <LoginForm setCards={setCards} setUser={setUser}/>
+    </div>
+  )
+
+  const cardForm = () => (
+    <div>
+      <CardForm createCard={addCard} />
+    </div>
+  )
 
   
 
-  return (
-    <div>
-      <Filter newFilter={newFilter} handleFilterChange={handleFilterChange} pictures={pictures}/>
-      <ShowAll setNewFilter={setNewFilter}/>
-      {filtered.map(picture => 
-        <Pictures 
-        key={picture.year}
-        year={picture.year}
-        data={picture.data}
-        />
-        )}
-    </div>
-  );
+  var filtered = cards.filter(card => card.year.includes(newFilter))
+
+  if (user === null) {
+    return (
+      <div>
+        {loginForm()}
+      </div>
+    )
+  } else {
+    return (
+      <div>
+        <Filter newFilter={newFilter} handleFilterChange={handleFilterChange} cards={cards}/>
+        <ShowAll setNewFilter={setNewFilter}/>
+        <p> 
+          {user.name} is logged in
+          <button onClick={handleLogout}>Logout</button>
+        </p>
+        {cardForm()}
+        {filtered.map(card => 
+          <Cards 
+          key={card.year}
+          year={card.year}
+          data={card.description}
+          />
+          )}
+      </div>
+    )
+  }
 }
 
 export default App;
